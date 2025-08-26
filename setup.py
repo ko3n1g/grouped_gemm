@@ -45,7 +45,7 @@ def get_package_version():
     with open(Path(this_dir) / "grouped_gemm" / "__init__.py", "r") as f:
         version_match = re.search(r"^__version__\s*=\s*(.*)$", f.read(), re.MULTILINE)
     public_version = ast.literal_eval(version_match.group(1))
-    local_version = os.environ.get("FLASH_ATTN_LOCAL_VERSION")
+    local_version = os.environ.get("GROUPED_GEMM_LOCAL_VERSION")
     if local_version:
         return f"{public_version}+{local_version}"
     else:
@@ -144,7 +144,7 @@ if not SKIP_CUDA_BUILD:
 class CachedWheelsCommand(_bdist_wheel):
     """
     The CachedWheelsCommand plugs into the default bdist wheel, which is ran by pip when it cannot
-    find an existing wheel (which is currently the case for all flash attention installs). We use
+    find an existing wheel (which is currently the case for all grouped gemm installs). We use
     the environment parameters to detect whether there is already a pre-built version of a compatible
     wheel available and short-circuits the standard full build pipeline.
     """
