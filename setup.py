@@ -23,21 +23,6 @@ SKIP_CUDA_BUILD = os.getenv("GROUPED_GEMM_SKIP_CUDA_BUILD", "FALSE") == "TRUE"
 if FORCE_CXX11_ABI:
     torch._C._GLIBCXX_USE_CXX11_ABI = True
 
-# TORCH_CUDA_ARCH_LIST can have one or more architectures,
-# e.g. "9.0" or "7.0 7.2 7.5 8.0 8.6 8.7 9.0+PTX". Here,
-# the "9.0+PTX" option asks the
-# compiler to additionally include PTX code that can be runtime-compiled
-# and executed on the 8.6 or newer architectures. While the PTX code will
-# not give the best performance on the newer architectures, it provides
-# forward compatibility.
-env_arch_list = os.environ.get("TORCH_CUDA_ARCH_LIST", None)
-if env_arch_list:
-    # Let PyTorch builder to choose device to target for.
-    device_capability = ""
-else:
-    device_capability = torch.cuda.get_device_capability()
-    device_capability = f"{device_capability[0]}{device_capability[1]}"
-
 cwd = Path(os.path.dirname(os.path.abspath(__file__)))
 
 nvcc_flags = [
@@ -112,17 +97,32 @@ def get_wheel_url():
     return wheel_url, wheel_filename
 
 
-if device_capability:
-    nvcc_flags.extend(
-        [
-            f"--generate-code=arch=compute_{device_capability},code=sm_{device_capability}",
-            f"-DGROUPED_GEMM_DEVICE_CAPABILITY={device_capability}",
-        ]
-    )
-
 ext_modules = []
 
 if not SKIP_CUDA_BUILD:
+    # TORCH_CUDA_ARCH_LIST can have one or more architectures,
+    # e.g. "9.0" or "7.0 7.2 7.5 8.0 8.6 8.7 9.0+PTX". Here,
+    # the "9.0+PTX" option asks the
+    # compiler to additionally include PTX code that can be runtime-compiled
+    # and executed on the 8.6 or newer architectures. While the PTX code will
+    # not give the best performance on the newer architectures, it provides
+    # forward compatibility.
+    env_arch_list = os.environ.get("TORCH_CUDA_ARCH_LIST", None)
+    if env_arch_list:
+        # Let PyTorch builder to choose device to target for.
+        device_capability = ""
+    else:
+        device_capability = torch.cuda.get_device_capability()
+        device_capability = f"{device_capability[0]}{device_capability[1]}"
+
+    if device_capability:
+        nvcc_flags.extend(
+            [
+                f"--generate-code=arch=compute_{device_capability},code=sm_{device_capability}",
+                f"-DGROUPED_GEMM_DEVICE_CAPABILITY={device_capability}",
+            ]
+        )
+
     ext_modules.append(
         CUDAExtension(
             "grouped_gemm_backend",
