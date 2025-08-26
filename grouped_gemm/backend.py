@@ -9,6 +9,7 @@ import grouped_gemm_backend as backend
 
 
 def _allocate_output(a, b, batch_sizes, trans_a, trans_b):
+    print("Test")
     assert not (trans_a and trans_b)
     assert batch_sizes.ndim == 1, "Expected 1d tensor for batch_sizes"
     assert a.ndim == 2, "Expected 2d tensor for 'a'"
